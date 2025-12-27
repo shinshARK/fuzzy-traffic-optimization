@@ -1,0 +1,18 @@
+# Python & uv
+__pycache__/
+*.py[cod]
+.venv/
+uv.lock
+
+# Manim output (Heavy video files)
+media/
+videos/
+images/
+
+# System
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

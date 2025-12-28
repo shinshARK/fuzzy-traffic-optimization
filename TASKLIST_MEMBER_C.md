@@ -6,11 +6,17 @@
 
 **Goal:** The Environment & Base Scene.
 
-* [ ] **Setup:** Ensure uv, ffmpeg, and miktex are working on Windows.  
-* [ ] **Code (2h):** Create src/visualizer.py. Draw the Intersection:  
+* [x] **Setup:** Ensure uv, ffmpeg, and miktex are working on Windows.  
+* [x] **Code (2h):** Create src/visualizer.py. Draw the Intersection:  
   * Two crossing roads (Lines).  
   * A Traffic Light object (Circle/Rectangle that changes color).  
-* [ ] **Git Commit:** feat: create basic manim road scene and traffic light objects
+* [x] **Git Commit:** feat: create basic manim road scene and traffic light objects
+
+## **📅 Day 1.5: Dec 28 (Sunday Evening)**
+
+**Goal:** Visual Improvements.
+
+* [x] **Refactor:** Extend roads to be "Infinite" (off-screen) to fix aspect ratio issues.
 
 ## **📅 Day 2: Dec 29 (Monday)**
 

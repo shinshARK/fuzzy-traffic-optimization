@@ -6,10 +6,10 @@
 
 **Goal:** Define the Logic.
 
-* [ ] **Setup:** Clone Repo & Run uv sync.  
+* [x] **Setup:** Clone Repo & Run uv sync.  
 * [ ] **Research (1h):** Read 2 papers on Fuzzy Traffic Control. Decide inputs (Queue Length, Arrival Rate).  
-* [ ] **Code (1h):** Create src/fuzzy\_brain.py. Define Membership functions (Trapezoidal/Triangular) for "Short", "Medium", "Long".  
-* [ ] **Git Commit:** feat: define fuzzy membership functions
+* [x] **Code (1h):** Create src/fuzzy\_brain.py. Define Membership functions (Trapezoidal/Triangular) for "Short", "Medium", "Long".  
+* [x] **Git Commit:** feat: define fuzzy membership functions
 
 ## **📅 Day 2: Dec 29 (Monday)**
 

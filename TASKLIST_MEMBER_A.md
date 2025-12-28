@@ -6,10 +6,17 @@
 
 **Goal:** Create the traffic generator.
 
-* [ ] **Setup:** Clone Repo & Run uv sync.  
-* [ ] **Code (1h):** Create src/traffic\_gen.py. Implement generate\_arrivals(lambda\_rate) using numpy.random.poisson.  
-* [ ] **Code (1h):** Create src/intersection.py. Define a Class Intersection with properties: queue, green\_timer, is\_green.  
-* [ ] **Git Commit:** feat: implement poisson traffic generator and intersection class
+* [x] **Setup:** Clone Repo & Run uv sync.  
+* [x] **Code (1h):** Create src/traffic\_gen.py. Implement generate\_arrivals(lambda\_rate) using numpy.random.poisson.  
+* [x] **Code (1h):** Create src/intersection.py. Define a Class Intersection with properties: queue, green\_timer, is\_green.  
+* [x] **Git Commit:** feat: implement poisson traffic generator and intersection class
+
+## **📅 Day 1.5: Dec 28 (Sunday Evening)**
+
+**Goal:** Refactor for Realism.
+
+* [x] **Refactor:** Update Intersection to support 4 Queues (N, S, E, W) and Phases (NS, EW).
+* [x] **Test:** Update tests to verify multi-queue logic.
 
 ## **📅 Day 2: Dec 29 (Monday)**
 

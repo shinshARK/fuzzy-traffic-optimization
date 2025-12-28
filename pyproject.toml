@@ -10,3 +10,17 @@ dependencies = [
     "packaging>=25.0",
     "scikit-fuzzy>=0.5.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "--ignore=src"
+filterwarnings = [
+    "ignore::DeprecationWarning:skfuzzy.*",
+    "ignore::DeprecationWarning:pydub.*"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

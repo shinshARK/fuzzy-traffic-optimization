@@ -158,3 +158,166 @@ class CarDemoScene(Scene):
             self.play(*[despawn_car(car) for car in cars])
         
         self.wait(1)
+
+
+class DataDrivenScene(Scene):
+    """
+    Animates traffic based on JSON simulation data.
+    
+    Usage:
+        # Default path (docs/simulation_data_schema.json):
+        uv run manim -pql visualizer.py DataDrivenScene
+        
+        # Custom path via environment variable:
+        JSON_PATH=path/to/data.json uv run manim -pql visualizer.py DataDrivenScene
+    """
+    
+    def construct(self):
+        import json
+        import os
+        
+        # Get JSON path from environment variable or use default
+        json_path = os.environ.get("JSON_PATH", "../docs/simulation_data_schema.json")
+        
+        # Load simulation data
+        with open(json_path, "r") as f:
+            data = json.load(f)
+        
+        # 1. Setup roads and lights
+        road_v = Rectangle(width=2, height=16, color=WHITE, fill_opacity=0)
+        road_h = Rectangle(width=20, height=2, color=WHITE, fill_opacity=0)
+        line_v = DashedLine(start=UP*4, end=DOWN*4, color=YELLOW)
+        line_h = DashedLine(start=LEFT*7, end=RIGHT*7, color=YELLOW)
+        self.add(road_v, road_h, line_v, line_h)
+        
+        # Traffic lights - one per direction
+        def create_light(position, direction_color):
+            body = Rectangle(width=0.4, height=0.9, color=GRAY, fill_opacity=1)
+            red = Circle(radius=0.12, color=RED, fill_opacity=1)
+            red.move_to(body.get_top() + DOWN*0.2)
+            green = Circle(radius=0.12, color=GREEN, fill_opacity=0.2)
+            green.move_to(body.get_bottom() + UP*0.2)
+            indicator = Dot(radius=0.05, color=direction_color).move_to(body.get_top() + UP*0.15)
+            light = VGroup(body, red, green, indicator).move_to(position)
+            return light, red, green
+        
+        light_n, red_n, green_n = create_light(UP*2.5 + LEFT*1.5, BLUE)
+        light_s, red_s, green_s = create_light(DOWN*2.5 + RIGHT*1.5, RED)
+        light_e, red_e, green_e = create_light(RIGHT*2.5 + UP*1.5, GREEN)
+        light_w, red_w, green_w = create_light(LEFT*2.5 + DOWN*1.5, ORANGE)
+        
+        lights = {
+            "N": (red_n, green_n), 
+            "S": (red_s, green_s), 
+            "E": (red_e, green_e), 
+            "W": (red_w, green_w)
+        }
+        
+        self.add(light_n, light_s, light_e, light_w)
+        
+        # HUD elements
+        phase_text = Text("Phase: -", font_size=20, color=WHITE).to_corner(UR)
+        timer_text = Text("Timer: -", font_size=16, color=WHITE).next_to(phase_text, DOWN)
+        queue_text = Text("Queues: N:0 S:0 E:0 W:0", font_size=14, color=WHITE).to_corner(UL)
+        
+        # Time display (large, bottom center)
+        time_display = Text("t=0", font_size=24, color=YELLOW).to_edge(DOWN)
+        
+        # Event log (bottom left, shows recent events)
+        event_log = Text("Events: -", font_size=12, color=GRAY).to_corner(DL)
+        
+        self.add(phase_text, timer_text, queue_text, time_display, event_log)
+        
+        # 2. Track active cars
+        active_cars: dict[str, Car] = {}
+        current_phase = None
+        colors = {"N": BLUE, "S": RED, "E": GREEN, "W": ORANGE}
+        
+        # 3. Process each frame
+        for frame in data["frames"]:
+            t = frame["t"]
+            state = frame["traffic_state"]
+            new_phase = state["current_phase"]
+            
+            animations = []
+            
+            # Phase change
+            if new_phase != current_phase:
+                current_phase = new_phase
+                
+                # Update lights
+                for d, (red_light, green_light) in lights.items():
+                    if d == current_phase:
+                        animations.append(red_light.animate.set_fill(opacity=0.2))
+                        animations.append(green_light.animate.set_fill(opacity=1))
+                    else:
+                        animations.append(red_light.animate.set_fill(opacity=1))
+                        animations.append(green_light.animate.set_fill(opacity=0.2))
+                
+                # Update phase text
+                new_phase_text = Text(f"Phase: {current_phase}", font_size=20, color=colors[current_phase]).to_corner(UR)
+                animations.append(Transform(phase_text, new_phase_text))
+            
+            # Update timer
+            new_timer = Text(f"Timer: {state['green_timer']}", font_size=16, color=WHITE).next_to(phase_text, DOWN)
+            animations.append(Transform(timer_text, new_timer))
+            
+            # Update time display
+            new_time = Text(f"t={t}", font_size=24, color=YELLOW).to_edge(DOWN)
+            animations.append(Transform(time_display, new_time))
+            
+            # Update queue display
+            q = state["queues"]
+            new_queue = Text(f"N:{q['N']} S:{q['S']} E:{q['E']} W:{q['W']}", font_size=14, color=WHITE).to_corner(UL)
+            animations.append(Transform(queue_text, new_queue))
+            
+            # Build event log string
+            events_str = []
+            for event in frame.get("car_events", []):
+                if event["event"] == "spawn":
+                    events_str.append(f"+{event['car_id']}")
+            for dep in frame.get("departures", []):
+                events_str.append(f"-{dep['car_id']}")
+            log_text = " ".join(events_str) if events_str else "-"
+            new_log = Text(f"Events: {log_text}", font_size=12, color=GRAY).to_corner(DL)
+            animations.append(Transform(event_log, new_log))
+            
+            # Spawn new cars
+            for event in frame.get("car_events", []):
+                if event["event"] == "spawn":
+                    car = Car(
+                        CarData(
+                            car_id=event["car_id"],
+                            origin=event["origin"],
+                            destination=event["destination"],
+                            intent=event["intent"],
+                            queue_position=event.get("queue_position", 0)
+                        ),
+                        queue_count=q[event["origin"]]
+                    )
+                    active_cars[event["car_id"]] = car
+                    animations.append(spawn_car(self, car))
+            
+            # Play frame updates
+            if animations:
+                self.play(*animations, run_time=0.3)
+            
+            # Move spawned cars to wait position
+            new_car_ids = [e["car_id"] for e in frame.get("car_events", []) if e["event"] == "spawn"]
+            if new_car_ids:
+                move_anims = [move_car_to_wait(active_cars[cid]) for cid in new_car_ids if cid in active_cars]
+                if move_anims:
+                    self.play(*move_anims, run_time=0.5)
+            
+            # Handle departures
+            for departure in frame.get("departures", []):
+                car_id = departure["car_id"]
+                if car_id in active_cars:
+                    car = active_cars[car_id]
+                    self.play(move_car_through_intersection(car, run_time=1.0))
+                    self.play(despawn_car(car, run_time=0.2))
+                    del active_cars[car_id]
+            
+            self.wait(0.1)
+        
+        self.wait(1)

@@ -22,10 +22,10 @@
 
 **Goal:** Build the Simulation Loop (The Engine).
 
-* [ ] **Code (2h):** Create src/simulation.py. Write a time-step loop ($t=0$ to $1000$).  
-* [ ] **Logic:** Implement basic queue math: Queue \= Queue \+ Arrivals \- Departures.  
-* [ ] **Test:** Print the queue length to console to ensure it grows/shrinks.  
-* [ ] **Git Commit:** feat: implement main discrete event simulation loop
+* [x] **Code (2h):** Create src/simulation.py. Write a time-step loop ($t=0$ to $1000$).  
+* [x] **Logic:** Implement basic queue math: Queue \= Queue \+ Arrivals \- Departures.  
+* [x] **Test:** Print the queue length to console to ensure it grows/shrinks.  
+* [x] **Git Commit:** feat: implement main discrete event simulation loop
 
 ## **📅 Day 3: Dec 30 (Tuesday)**
 

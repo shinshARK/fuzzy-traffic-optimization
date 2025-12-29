@@ -5,16 +5,10 @@ class Intersection:
         """
         self.queues: dict[str, int] = {'N': 0, 'S': 0, 'E': 0, 'W': 0}
         self.green_timer: int = 0
-        self.current_phase: str = 'NS' # 'NS' or 'EW'
+        self.current_phase: str = 'N'  # Default start phase
 
     def add_cars(self, direction: str, count: int):
-        """
-        Add cars to a specific queue.
-        
-        Args:
-            direction (str): 'N', 'S', 'E', or 'W'.
-            count (int): Number of cars to add.
-        """
+        """Add cars to a specific queue."""
         if count < 0:
             raise ValueError("Cannot add negative cars.")
         if direction not in self.queues:
@@ -25,35 +19,35 @@ class Intersection:
     def set_green_light(self, duration: int, phase: str):
         """
         Set the traffic light to green for a specific phase.
-        
-        Args:
-            duration (int): Time in seconds.
-            phase (str): 'NS' or 'EW'.
+        Phase order typically: N -> S -> E -> W
         """
-        if phase not in ['NS', 'EW']:
-            raise ValueError("Invalid phase. Must be 'NS' or 'EW'.")
+        valid_phases = ['N', 'S', 'E', 'W']
+        if phase not in valid_phases:
+            raise ValueError(f"Invalid phase. Must be one of {valid_phases}")
             
         self.current_phase = phase
         self.green_timer = duration
 
-    def step(self, departure_rate: int = 1):
+    def step(self, departure_rate: int = 1) -> dict[str, int]:
         """
         Advance the simulation by one time step.
-        Reduces queues for the active phase.
+        Returns a dictionary of departed cars count per direction.
+        e.g., {'N': 1, 'S': 0, ...}
         """
-        # Determine active queues based on phase
-        active_dirs = []
-        if self.green_timer > 0:
-            if self.current_phase == 'NS':
-                active_dirs = ['N', 'S']
-            elif self.current_phase == 'EW':
-                active_dirs = ['E', 'W']
-
-        # Departures
-        for direction in active_dirs:
-            departed = min(self.queues[direction], departure_rate)
-            self.queues[direction] -= departed
+        departed_counts = {'N': 0, 'S': 0, 'E': 0, 'W': 0}
         
-        # Timer logic
+        # Determine active queues based on 4-Phase System
+        # Only the direction matching the current_phase gets to go
         if self.green_timer > 0:
+            active_dir = self.current_phase  # 'N', 'S', 'E', or 'W'
+            
+            # Logic: Departure
+            if self.queues[active_dir] > 0:
+                count = min(self.queues[active_dir], departure_rate)
+                self.queues[active_dir] -= count
+                departed_counts[active_dir] = count
+                
+            # Decrease Timer
             self.green_timer -= 1
+            
+        return departed_counts

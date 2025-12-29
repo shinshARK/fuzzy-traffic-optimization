@@ -1,28 +1,25 @@
 {
   "metadata": {
-    "simulation_duration": 100,
-    "time_step": 1,
-    "departure_rate": 1,
-    "traffic_mode": "fuzzy",
+    "simulation_duration": 30,
     "phase_order": [
       "N",
       "S",
       "E",
       "W"
     ],
-    "description": "4-phase traffic system - one direction at a time"
+    "traffic_mode": "fuzzy"
   },
   "frames": [
     {
       "t": 0,
       "traffic_state": {
         "current_phase": "N",
-        "green_timer": 15,
+        "green_timer": 10,
         "queues": {
-          "N": 3,
-          "S": 2,
-          "E": 5,
-          "W": 4
+          "N": 2,
+          "S": 1,
+          "E": 1,
+          "W": 0
         }
       },
       "car_events": [
@@ -41,23 +38,15 @@
           "destination": "W",
           "intent": "left",
           "queue_position": 1
-        }
-      ],
-      "departures": []
-    },
-    {
-      "t": 1,
-      "traffic_state": {
-        "current_phase": "N",
-        "green_timer": 14,
-        "queues": {
-          "N": 2,
-          "S": 2,
-          "E": 6,
-          "W": 4
-        }
-      },
-      "car_events": [
+        },
+        {
+          "car_id": "S_1",
+          "event": "spawn",
+          "origin": "S",
+          "destination": "N",
+          "intent": "straight",
+          "queue_position": 0
+        },
         {
           "car_id": "E_1",
           "event": "spawn",
@@ -67,6 +56,21 @@
           "queue_position": 0
         }
       ],
+      "departures": []
+    },
+    {
+      "t": 1,
+      "traffic_state": {
+        "current_phase": "N",
+        "green_timer": 9,
+        "queues": {
+          "N": 1,
+          "S": 1,
+          "E": 1,
+          "W": 0
+        }
+      },
+      "car_events": [],
       "departures": [
         {
           "car_id": "N_1",
@@ -76,36 +80,97 @@
       ]
     },
     {
-      "t": 15,
+      "t": 2,
       "traffic_state": {
-        "current_phase": "S",
-        "green_timer": 12,
+        "current_phase": "N",
+        "green_timer": 8,
         "queues": {
-          "N": 4,
-          "S": 2,
-          "E": 8,
-          "W": 5
+          "N": 0,
+          "S": 1,
+          "E": 1,
+          "W": 0
         }
       },
       "car_events": [],
-      "departures": [],
-      "note": "Phase changed from N to S"
+      "departures": [
+        {
+          "car_id": "N_2",
+          "origin": "N",
+          "destination": "W"
+        }
+      ]
     },
     {
-      "t": 27,
+      "t": 10,
       "traffic_state": {
-        "current_phase": "E",
-        "green_timer": 20,
+        "current_phase": "S",
+        "green_timer": 8,
         "queues": {
-          "N": 6,
-          "S": 4,
-          "E": 8,
-          "W": 6
+          "N": 0,
+          "S": 1,
+          "E": 1,
+          "W": 0
         }
       },
       "car_events": [],
-      "departures": [],
-      "note": "Phase changed from S to E - fuzzy logic gave E longer time due to high queue"
+      "departures": []
+    },
+    {
+      "t": 11,
+      "traffic_state": {
+        "current_phase": "S",
+        "green_timer": 7,
+        "queues": {
+          "N": 0,
+          "S": 0,
+          "E": 1,
+          "W": 0
+        }
+      },
+      "car_events": [],
+      "departures": [
+        {
+          "car_id": "S_1",
+          "origin": "S",
+          "destination": "N"
+        }
+      ]
+    },
+    {
+      "t": 18,
+      "traffic_state": {
+        "current_phase": "E",
+        "green_timer": 6,
+        "queues": {
+          "N": 0,
+          "S": 0,
+          "E": 1,
+          "W": 0
+        }
+      },
+      "car_events": [],
+      "departures": []
+    },
+    {
+      "t": 19,
+      "traffic_state": {
+        "current_phase": "E",
+        "green_timer": 5,
+        "queues": {
+          "N": 0,
+          "S": 0,
+          "E": 0,
+          "W": 0
+        }
+      },
+      "car_events": [],
+      "departures": [
+        {
+          "car_id": "E_1",
+          "origin": "E",
+          "destination": "W"
+        }
+      ]
     }
   ]
 }

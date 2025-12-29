@@ -148,6 +148,66 @@ with open("simulation_data.json", "w") as f:
 
 ---
 
+## Calculating Wait Times (For Paper Stats)
+
+Track when each car spawns and departs to calculate wait times:
+
+```python
+# Track spawn times
+car_spawn_times = {}  # car_id -> spawn_time
+
+# Track wait times
+wait_times = []
+
+for t in range(simulation_duration):
+    # When car spawns, record spawn time
+    for event in car_events:
+        if event["event"] == "spawn":
+            car_spawn_times[event["car_id"]] = t
+    
+    # When car departs, calculate wait time
+    for departure in departures:
+        car_id = departure["car_id"]
+        spawn_t = car_spawn_times[car_id]
+        wait_time = t - spawn_t
+        wait_times.append(wait_time)
+
+# Calculate statistics
+average_wait = sum(wait_times) / len(wait_times)
+max_wait = max(wait_times)
+min_wait = min(wait_times)
+```
+
+### Add Stats to Metadata
+
+```json
+{
+  "metadata": {
+    "traffic_mode": "fuzzy",
+    "simulation_duration": 100,
+    "total_cars_processed": 85,
+    "average_wait_time": 12.5,
+    "max_wait_time": 45,
+    "min_wait_time": 2,
+    "throughput_per_cycle": 21.3
+  }
+}
+```
+
+### Comparing Fixed vs Fuzzy
+
+Run simulation twice with different modes:
+
+| Metric | Fixed Timer | Fuzzy Logic |
+|--------|-------------|-------------|
+| Avg Wait Time | 18.2s | 12.5s |
+| Max Wait Time | 60s | 45s |
+| Throughput | 72 cars | 85 cars |
+
+Use these stats to create graphs for the paper!
+
+---
+
 ## Questions?
 
 Ask Member C if you need clarification!

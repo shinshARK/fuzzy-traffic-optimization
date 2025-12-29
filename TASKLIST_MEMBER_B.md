@@ -15,10 +15,10 @@
 
 **Goal:** The Rule Base.
 
-* [ ] **Code (2h):** Implement the Rules in src/fuzzy\_brain.py.  
+* [x] **Code (2h):** Implement the Rules in src/fuzzy\_brain.py.  
   * *Example:* IF Queue is Long AND Arrival is High THEN Green is Extended.  
-* [ ] **Test:** Run a script testing specific values (e.g., Input 50 cars \-\> Output 45 seconds).  
-* [ ] **Git Commit:** feat: implement fuzzy inference rules and defuzzification
+* [x] **Test:** Run a script testing specific values (e.g., Input 50 cars \-\> Output 45 seconds).  
+* [x] **Git Commit:** feat: implement fuzzy inference rules and defuzzification
 
 ## **📅 Day 3: Dec 30 (Tuesday)**
 

@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "simulation_duration": 100,
+    "time_step": 1,
+    "departure_rate": 1,
+    "traffic_mode": "fuzzy",
+    "description": "Fuzzy traffic light optimization simulation"
+  },
+  "frames": [
+    {
+      "t": 0,
+      "traffic_state": {
+        "current_phase": "NS",
+        "green_timer": 30,
+        "queues": {
+          "N": 3,
+          "S": 2,
+          "E": 5,
+          "W": 4
+        }
+      },
+      "car_events": [
+        {
+          "car_id": "N_1",
+          "event": "spawn",
+          "origin": "N",
+          "destination": "S",
+          "intent": "straight"
+        },
+        {
+          "car_id": "E_1",
+          "event": "spawn",
+          "origin": "E",
+          "destination": "N",
+          "intent": "left"
+        }
+      ],
+      "departures": []
+    },
+    {
+      "t": 1,
+      "traffic_state": {
+        "current_phase": "NS",
+        "green_timer": 29,
+        "queues": {
+          "N": 2,
+          "S": 1,
+          "E": 6,
+          "W": 4
+        }
+      },
+      "car_events": [
+        {
+          "car_id": "E_2",
+          "event": "spawn",
+          "origin": "E",
+          "destination": "W",
+          "intent": "straight"
+        }
+      ],
+      "departures": [
+        {
+          "car_id": "N_1",
+          "origin": "N",
+          "destination": "S",
+          "note": "NS phase green - can proceed"
+        }
+      ]
+    },
+    {
+      "t": 30,
+      "traffic_state": {
+        "current_phase": "EW",
+        "green_timer": 25,
+        "queues": {
+          "N": 5,
+          "S": 4,
+          "E": 2,
+          "W": 3
+        }
+      },
+      "car_events": [],
+      "departures": [
+        {
+          "car_id": "E_1",
+          "origin": "E",
+          "destination": "N",
+          "note": "EW phase now green - left turn proceeds"
+        },
+        {
+          "car_id": "E_2",
+          "origin": "E",
+          "destination": "W",
+          "note": "EW phase now green - straight proceeds"
+        }
+      ]
+    }
+  ]
+}

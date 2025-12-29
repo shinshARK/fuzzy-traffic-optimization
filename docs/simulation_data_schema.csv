@@ -1,0 +1,8 @@
+t,event,car_id,origin,destination,intent,phase,green_timer,queue_N,queue_S,queue_E,queue_W,note
+0,spawn,N_1,N,S,straight,NS,30,3,2,5,4,NS phase active - N/S can go
+0,spawn,E_1,E,N,left,NS,30,3,2,5,4,Must wait - EW phase not active
+1,spawn,E_2,E,W,straight,NS,29,2,1,6,4,Must wait - EW phase not active
+1,depart,N_1,N,S,straight,NS,29,2,1,6,4,Car from N crosses to S
+30,phase_change,,,,,,EW,25,5,4,2,3,Phase changed from NS to EW
+30,depart,E_1,E,N,left,EW,25,5,4,2,3,EW green - left turn proceeds
+30,depart,E_2,E,W,straight,EW,25,5,4,2,3,EW green - straight proceeds

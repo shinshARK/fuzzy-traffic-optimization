@@ -12,8 +12,6 @@ Traditional traffic lights use fixed timers, leading to inefficiencies (waiting 
 
 ### **The Scientific Approach**
 
-### **The Scientific Approach**
-
 1. **Data Generation (Monte Carlo):** Instead of using static datasets, we simulate traffic arrivals using the **Poisson Distribution** ($P(k) = \frac{\lambda^k e^{-\lambda}}{k!}$) to model stochastic arrival events.
 
 2. **The Numerical Method (Simulation):** We use Euler's Method (Discrete Time Stepping) to simulate the queue dynamics over time:

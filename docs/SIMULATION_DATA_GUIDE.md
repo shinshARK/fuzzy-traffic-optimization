@@ -1,29 +1,44 @@
 # Simulation Data Export Guide (For Member A)
 
-This document explains how to export simulation data for the Manim visualization.
+This document explains how to export simulation data for Manim visualization.
 
-## Overview
+## Phase System: 4-Phase (N → S → E → W)
 
-Member C needs a **JSON file** containing frame-by-frame data of:
-1. Traffic light states (which phase is green, timer value)
-2. Queue counts for each direction
-3. Car spawn/departure events
+We use a **4-phase system** where only one direction goes at a time:
+
+| Phase | Who Goes | Why? |
+|-------|----------|------|
+| `"N"` | Only North cars | No conflict with any other direction |
+| `"S"` | Only South cars | No conflict |
+| `"E"` | Only East cars | No conflict |
+| `"W"` | Only West cars | No conflict |
+
+**Fuzzy logic determines duration** for each phase based on queue length.
 
 ---
 
-## File Format: JSON
+## JSON Structure
 
 Export to: `simulation_data.json`
 
-### Structure
-
 ```json
 {
-  "metadata": { ... },
+  "metadata": {
+    "simulation_duration": 100,
+    "phase_order": ["N", "S", "E", "W"],
+    "traffic_mode": "fuzzy"
+  },
   "frames": [
-    { "t": 0, "traffic_state": {...}, "car_events": [...], "departures": [...] },
-    { "t": 1, ... },
-    ...
+    {
+      "t": 0,
+      "traffic_state": {
+        "current_phase": "N",
+        "green_timer": 15,
+        "queues": { "N": 3, "S": 2, "E": 5, "W": 4 }
+      },
+      "car_events": [...],
+      "departures": [...]
+    }
   ]
 }
 ```
@@ -32,52 +47,21 @@ Export to: `simulation_data.json`
 
 ## Field Reference
 
-### metadata (top-level)
+### car_events[] (when a car arrives)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `simulation_duration` | int | Total timesteps (e.g., 100) |
-| `time_step` | int | Usually 1 |
-| `traffic_mode` | string | `"fuzzy"` or `"fixed"` |
-
-### frames[] (array of frame objects)
-
-Each frame represents one timestep:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `t` | int | Current timestep (0, 1, 2, ...) |
-| `traffic_state` | object | Light status + queue counts |
-| `car_events` | array | Cars that spawned this frame |
-| `departures` | array | Cars that left the intersection |
-
-### traffic_state (per frame)
-
-| Field | Type | Values |
-|-------|------|--------|
-| `current_phase` | string | `"NS"` or `"EW"` |
-| `green_timer` | int | Seconds remaining for this phase |
-| `queues` | object | `{"N": 3, "S": 2, "E": 5, "W": 4}` |
-
-### car_events[] (spawns)
-
-When a car **arrives** at the intersection:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `car_id` | string | Unique ID like `"N_1"`, `"E_3"` (origin + sequence) |
-| `event` | string | Always `"spawn"` |
+| `car_id` | string | `"N_1"`, `"E_3"` (origin + sequence) |
 | `origin` | string | `"N"`, `"S"`, `"E"`, or `"W"` |
-| `destination` | string | Where the car is going |
-| `intent` | string | `"straight"`, `"left"`, or `"right"` |
+| `destination` | string | Where car goes |
+| `intent` | string | `"straight"`, `"left"`, `"right"` |
+| `queue_position` | int | 0, 1, 2... (for visual offset) |
 
-### departures[] (exits)
-
-When a car **crosses** the intersection:
+### departures[] (when a car leaves)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `car_id` | string | Same ID from the spawn event |
+| `car_id` | string | Same ID from spawn |
 | `origin` | string | Where car came from |
 | `destination` | string | Where car went |
 
@@ -86,68 +70,45 @@ When a car **crosses** the intersection:
 ## Movement Rules
 
 ```
-Phase "NS" is green → Cars from N and S can depart
-Phase "EW" is green → Cars from E and W can depart
+A car can ONLY depart when current_phase matches its origin:
+- origin = "N" → needs phase "N"
+- origin = "S" → needs phase "S"
+- origin = "E" → needs phase "E"
+- origin = "W" → needs phase "W"
 ```
-
-A car can only depart when its origin direction matches the active phase:
-- `origin = "N"` or `"S"` → needs phase `"NS"`
-- `origin = "E"` or `"W"` → needs phase `"EW"`
 
 ---
 
-## Example: One Frame
+## Example: Phase Cycle
 
-```json
-{
-  "t": 5,
-  "traffic_state": {
-    "current_phase": "NS",
-    "green_timer": 25,
-    "queues": { "N": 2, "S": 1, "E": 6, "W": 4 }
-  },
-  "car_events": [
-    {
-      "car_id": "E_3",
-      "event": "spawn",
-      "origin": "E",
-      "destination": "W",
-      "intent": "straight"
-    }
-  ],
-  "departures": [
-    {
-      "car_id": "N_1",
-      "origin": "N",
-      "destination": "S"
-    }
-  ]
-}
 ```
-
-**What this means:**
-- At t=5, NS phase is still green (25 seconds left)
-- A new car `E_3` arrived from East → added to E queue (must wait)
-- Car `N_1` from North crossed through (NS is green, so it can go)
+t=0:  Phase N, green_timer=15  → N cars depart
+t=15: Phase S, green_timer=12  → S cars depart  
+t=27: Phase E, green_timer=20  → E cars depart (fuzzy gave more time due to high queue)
+t=47: Phase W, green_timer=10  → W cars depart
+t=57: Phase N again...         → Cycle repeats
+```
 
 ---
 
-## How to Generate This in Python
-
-In your `simulation.py`, after each timestep:
+## Generating in Python
 
 ```python
 import json
 
-# Track cars with incrementing counters
+# Phase order
+PHASES = ["N", "S", "E", "W"]
+current_phase_idx = 0
 car_counters = {"N": 0, "S": 0, "E": 0, "W": 0}
 frames = []
 
 for t in range(simulation_duration):
+    current_phase = PHASES[current_phase_idx % 4]
+    
     frame = {
         "t": t,
         "traffic_state": {
-            "current_phase": intersection.current_phase,
+            "current_phase": current_phase,
             "green_timer": intersection.green_timer,
             "queues": dict(intersection.queues)
         },
@@ -155,39 +116,38 @@ for t in range(simulation_duration):
         "departures": []
     }
     
-    # When a car arrives (from Poisson generator)
+    # Spawn new arrivals
     for direction, arrivals in new_arrivals.items():
+        queue_pos = intersection.queues[direction]
         for _ in range(arrivals):
             car_counters[direction] += 1
             frame["car_events"].append({
                 "car_id": f"{direction}_{car_counters[direction]}",
-                "event": "spawn",
                 "origin": direction,
-                "destination": get_random_destination(direction),
-                "intent": determine_intent(direction, destination)
+                "destination": get_destination(direction),
+                "intent": get_intent(direction, destination),
+                "queue_position": queue_pos
             })
+            queue_pos += 1
     
-    # When a car departs (queue decreases)
-    # ... track which car_ids are leaving
+    # Departures (only if current phase matches)
+    if current_phase == active_direction:
+        # ... record departing cars
+    
+    # Phase change logic
+    if intersection.green_timer == 0:
+        current_phase_idx += 1
+        # Fuzzy logic sets new green_timer
     
     frames.append(frame)
 
-# Save to file
-output = {
-    "metadata": {
-        "simulation_duration": simulation_duration,
-        "time_step": 1,
-        "traffic_mode": "fuzzy"
-    },
-    "frames": frames
-}
-
+# Save
 with open("simulation_data.json", "w") as f:
-    json.dump(output, f, indent=2)
+    json.dump({"metadata": {...}, "frames": frames}, f, indent=2)
 ```
 
 ---
 
 ## Questions?
 
-Ask Member C (visualizer) if you need clarification on the format!
+Ask Member C if you need clarification!

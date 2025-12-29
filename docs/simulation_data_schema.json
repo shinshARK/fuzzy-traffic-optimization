@@ -4,14 +4,20 @@
     "time_step": 1,
     "departure_rate": 1,
     "traffic_mode": "fuzzy",
-    "description": "Fuzzy traffic light optimization simulation"
+    "phase_order": [
+      "N",
+      "S",
+      "E",
+      "W"
+    ],
+    "description": "4-phase traffic system - one direction at a time"
   },
   "frames": [
     {
       "t": 0,
       "traffic_state": {
-        "current_phase": "NS",
-        "green_timer": 30,
+        "current_phase": "N",
+        "green_timer": 15,
         "queues": {
           "N": 3,
           "S": 2,
@@ -25,14 +31,16 @@
           "event": "spawn",
           "origin": "N",
           "destination": "S",
-          "intent": "straight"
+          "intent": "straight",
+          "queue_position": 0
         },
         {
-          "car_id": "E_1",
+          "car_id": "N_2",
           "event": "spawn",
-          "origin": "E",
-          "destination": "N",
-          "intent": "left"
+          "origin": "N",
+          "destination": "W",
+          "intent": "left",
+          "queue_position": 1
         }
       ],
       "departures": []
@@ -40,60 +48,64 @@
     {
       "t": 1,
       "traffic_state": {
-        "current_phase": "NS",
-        "green_timer": 29,
+        "current_phase": "N",
+        "green_timer": 14,
         "queues": {
           "N": 2,
-          "S": 1,
+          "S": 2,
           "E": 6,
           "W": 4
         }
       },
       "car_events": [
         {
-          "car_id": "E_2",
+          "car_id": "E_1",
           "event": "spawn",
           "origin": "E",
           "destination": "W",
-          "intent": "straight"
+          "intent": "straight",
+          "queue_position": 0
         }
       ],
       "departures": [
         {
           "car_id": "N_1",
           "origin": "N",
-          "destination": "S",
-          "note": "NS phase green - can proceed"
+          "destination": "S"
         }
       ]
     },
     {
-      "t": 30,
+      "t": 15,
       "traffic_state": {
-        "current_phase": "EW",
-        "green_timer": 25,
+        "current_phase": "S",
+        "green_timer": 12,
         "queues": {
-          "N": 5,
-          "S": 4,
-          "E": 2,
-          "W": 3
+          "N": 4,
+          "S": 2,
+          "E": 8,
+          "W": 5
         }
       },
       "car_events": [],
-      "departures": [
-        {
-          "car_id": "E_1",
-          "origin": "E",
-          "destination": "N",
-          "note": "EW phase now green - left turn proceeds"
-        },
-        {
-          "car_id": "E_2",
-          "origin": "E",
-          "destination": "W",
-          "note": "EW phase now green - straight proceeds"
+      "departures": [],
+      "note": "Phase changed from N to S"
+    },
+    {
+      "t": 27,
+      "traffic_state": {
+        "current_phase": "E",
+        "green_timer": 20,
+        "queues": {
+          "N": 6,
+          "S": 4,
+          "E": 8,
+          "W": 6
         }
-      ]
+      },
+      "car_events": [],
+      "departures": [],
+      "note": "Phase changed from S to E - fuzzy logic gave E longer time due to high queue"
     }
   ]
 }

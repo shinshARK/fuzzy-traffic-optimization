@@ -162,7 +162,7 @@ def run_simulation():
         "frames": frames
     }
     
-    with open("simulation_data.json", "w") as f:
+    with open("docs/simulation_data_schema.json", "w") as f:
         json.dump(output_data, f, indent=2)
         
     print("\n✅ Data exported to simulation_data.json")

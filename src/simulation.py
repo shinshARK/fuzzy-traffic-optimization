@@ -1,195 +1,177 @@
 import json
-import random
 import numpy as np
 from collections import deque
 from src.traffic_gen import generate_arrivals
 from src.intersection import Intersection
 from src.fuzzy_module import get_green_duration
 
-# --- KONFIGURASI SIMULASI ---
-SIMULATION_DURATION = 100  # Lebih pendek untuk tes JSON
-ARRIVAL_RATE = 0.4         # Lambda
+# --- KONFIGURASI GLOBAL ---
+SIMULATION_DURATION = 300  # Durasi diperpanjang (5 menit) untuk data lebih valid
+ARRIVAL_RATE = 0.4         # Lambda (Tingkat kepadatan traffic)
 DEPARTURE_RATE = 1         # Mu
-
-# --- KONFIGURASI FASE (4 PHASE SYSTEM) ---
-PHASE_ORDER = ['N', 'S', 'E', 'W']
+PHASE_ORDER = ['N', 'E', 'S', 'W']
 
 def get_destination_and_intent(origin):
-    """
-    Menentukan tujuan berdasarkan arah asal (origin) dan niat (intent).
-    Menggunakan urutan Clockwise (N-E-S-W) untuk perhitungan yang akurat.
-    """
     opts = ['straight', 'left', 'right']
-    probs = [0.6, 0.2, 0.2] # 60% Lurus
+    probs = [0.6, 0.2, 0.2] 
     intent = np.random.choice(opts, p=probs)
-    
-    # PENTING: Urutan harus Clockwise (Jarum Jam)
     compass = ['N', 'E', 'S', 'W']
-    
-    if origin not in compass:
-        raise ValueError(f"Invalid origin: {origin}")
-        
     current_idx = compass.index(origin)
     
-    # Logika Navigasi
-    if intent == 'straight':
-        # Lurus = Seberang jalan (Index + 2)
-        dest_idx = (current_idx + 2) % 4
-    elif intent == 'left':
-        # Belok Kiri = Arah selanjutnya dalam jarum jam (Index + 1)
-        # Contoh: Dari N (Utara) belok kiri bagi pengemudi adalah ke E (Timur) di sistem koordinat ini
-        # *Catatan: Ini tergantung sistem lajur (kiri/kanan), tapi untuk topologi graf sederhana:
-        dest_idx = (current_idx + 1) % 4 
-    else: # right
-        # Belok Kanan = Arah sebelumnya (Index - 1)
-        dest_idx = (current_idx - 1) % 4
-        
-    destination = compass[dest_idx]
-        
-    return destination, intent
+    if intent == 'straight': dest_idx = (current_idx + 2) % 4
+    elif intent == 'left':   dest_idx = (current_idx + 1) % 4 
+    else:                    dest_idx = (current_idx - 1) % 4
+    return compass[dest_idx], intent
 
-def run_simulation():
-    print(f"--- Memulai Simulasi (Export Mode) ---")
+def run_simulation(mode="FUZZY", fixed_duration=30):
+    """
+    Menjalankan simulasi dengan mode tertentu.
+    mode: "FUZZY" atau "FIXED"
+    fixed_duration: Detik lampu hijau jika mode FIXED (default 30s)
+    """
+    print(f"\n🚀 Memulai Simulasi Mode: {mode}...")
     
     intersection = Intersection()
-    intersection.set_green_light(15, 'N') # Start Phase N
+    intersection.set_green_light(10, 'N') 
     
-    # Data Structures untuk JSON Export
     frames = []
-    
-    # Tracking ID Mobil: Kita butuh antrian ID terpisah dari hitungan matematika
-    # Format: queue_ids['N'] = ['N_1', 'N_2', ...]
     queue_ids = {k: deque() for k in ['N', 'S', 'E', 'W']} 
-    car_counters = {k: 0 for k in ['N', 'S', 'E', 'W']} # Untuk generate ID unik
+    car_counters = {k: 0 for k in ['N', 'S', 'E', 'W']} 
+    
+    # --- STATISTIK METRICS ---
+    wait_times = []      # Menyimpan waktu tunggu setiap mobil yang berhasil keluar
+    total_cars_spawned = 0
+    total_cars_departed = 0
     
     current_phase_idx = 0
 
     for t in range(SIMULATION_DURATION):
         
-        # --- 1. PREPARE FRAME DATA ---
         frame = {
             "t": t,
             "traffic_state": {
                 "current_phase": intersection.current_phase,
                 "green_timer": intersection.green_timer,
-                "queues": intersection.queues.copy() # Copy agar nilai tidak berubah
+                "queues": intersection.queues.copy()
             },
             "car_events": [],
             "departures": []
         }
         
-        # --- 2. GENERATE ARRIVALS ---
-        arrivals = {}
+        # --- 1. GENERATE ARRIVALS ---
         for direction in ['N', 'S', 'E', 'W']:
             count = generate_arrivals(ARRIVAL_RATE)
-            arrivals[direction] = count
-            
-            # Tambahkan ke Intersection (Math Logic)
             intersection.add_cars(direction, count)
             
-            # Tambahkan ke Tracking ID (Log Logic)
-            current_q_len = len(queue_ids[direction]) # Posisi antrian mobil baru
+            total_cars_spawned += count
+            current_q_len = len(queue_ids[direction])
             
             for i in range(count):
                 car_counters[direction] += 1
                 car_id = f"{direction}_{car_counters[direction]}"
-                
-                # Generate Metadata
                 dest, intent = get_destination_and_intent(direction)
                 
-                # --- PERBAIKAN DI SINI ---
-                # Simpan ID DAN Destination ke dalam antrian memori
+                # SIMPAN WAKTU KEDATANGAN (t) UNTUK HITUNG WAIT TIME
                 car_info = {
                     "id": car_id,
-                    "destination": dest,
-                    "intent": intent # Opsional, kalau mau track intent saat keluar juga
+                    "dest": dest,
+                    "spawn_time": t  # <--- METRIC PENTING
                 }
                 queue_ids[direction].append(car_info)
-                # -------------------------
                 
-                # Masukkan ke event log (JSON)
                 frame["car_events"].append({
                     "car_id": car_id,
                     "event": "spawn",
                     "origin": direction,
-                    "destination": dest,   # Ini sudah benar
-                    "intent": intent,      # Ini sudah benar
+                    "destination": dest,
+                    "intent": intent,
                     "queue_position": current_q_len + i
                 })
 
-        # --- 3. PROCESS STEP & DEPARTURES ---
-        # Step sekarang mengembalikan info berapa mobil yang keluar
+        # --- 2. DEPARTURES & METRIC CALCULATION ---
         departed_counts = intersection.step(departure_rate=DEPARTURE_RATE)
         
-        # Proses ID mobil yang keluar (FIFO)
         for direction, count in departed_counts.items():
             for _ in range(count):
                 if queue_ids[direction]:
-                    # --- PERBAIKAN DI SINI ---
-                    # Ambil paket info mobil yang paling depan
                     car_data = queue_ids[direction].popleft()
                     
+                    # HITUNG WAITING TIME
+                    wait_time = t - car_data["spawn_time"]
+                    wait_times.append(wait_time)
+                    total_cars_departed += 1
+                    
                     frame["departures"].append({
-                        "car_id": car_data["id"],      # Ambil ID dari paket
+                        "car_id": car_data["id"],
                         "origin": direction,
-                        "destination": car_data["destination"] # Ambil Destinasi dari paket
+                        "destination": car_data["dest"]
                     })
-                    # -------------------------
 
-        # --- 4. PHASE SWITCHING  ---
-        # Tanpa Fuzzy -----------------------------------
-        #  if intersection.green_timer <= 0:
-        #     current_phase_idx = (current_phase_idx + 1) % 4
-        #     next_phase = PHASE_ORDER[current_phase_idx]
-            
-        #     # --- FUZZY LOGIC HOOK (Nanti di sini) ---
-        #     duration = 15 # Fixed for now
-            
-        #     intersection.set_green_light(duration, next_phase)
-        # Tanpa Fuzzy -----------------------------------
-            
-        
-        # Dengan Fuzzy -----------------------------------
+        # --- 3. PHASE SWITCHING (DUAL MODE) ---
         if intersection.green_timer <= 0:
             current_phase_idx = (current_phase_idx + 1) % 4
             next_phase = PHASE_ORDER[current_phase_idx]
             
-            # 1. Ambil Data Real-time
-            queue_next = intersection.queues[next_phase]
-            
-            # 2. Panggil 'Fuzzy Logic' (Sekarang butuh parameter ARRIVAL_RATE)
-            # Kita pakai ARRIVAL_RATE global yang ada di atas file simulation.py
-            duration = get_green_duration(queue_next, ARRIVAL_RATE)
-            
-            # Minimum durasi agar tidak terlalu cepat ganti (misal min 5 detik)
-            duration = max(5, duration)
+            # --- LOGIKA MODE ---
+            if mode == "FUZZY":
+                queue_next = intersection.queues[next_phase]
+                # Panggil Fuzzy Module
+                duration = get_green_duration(queue_next, ARRIVAL_RATE)
+                duration = max(5, duration) # Safety clamp
+            else:
+                # Mode FIXED (Timer konvensional)
+                duration = fixed_duration
             
             intersection.set_green_light(duration, next_phase)
             
-            print(f"[T={t:3d}] Switch to {next_phase} | Q: {queue_next:2d} | Arr: {ARRIVAL_RATE} -> Fuzzy Time: {duration}s")
-        # Dengan Fuzzy -----------------------------------
-            
-        # Simpan Frame
         frames.append(frame)
-        
-        # Print progress tipis-tipis
-        if t % 10 == 0:
-            print(f"Time {t}: {intersection.queues}")
 
-    # --- 5. EXPORT JSON ---
+    # --- 4. EXPORT JSON (Beda nama file per mode) ---
+    filename = f"docs/simulation_data_{mode.lower()}.json"
     output_data = {
         "metadata": {
-            "simulation_duration": SIMULATION_DURATION,
-            "phase_order": PHASE_ORDER,
-            "traffic_mode": "fuzzy_ready" # Placeholder name
+            "mode": mode,
+            "duration": SIMULATION_DURATION,
+            "avg_wait_time": np.mean(wait_times) if wait_times else 0
         },
         "frames": frames
     }
-    
-    with open("docs/simulation_data.json", "w") as f:
+    with open(filename, "w") as f:
         json.dump(output_data, f, indent=2)
-        
-    print("\n✅ Data exported to simulation_data.json")
+
+    # --- 5. RETURN STATS ---
+    avg_wait = np.mean(wait_times) if wait_times else 0
+    max_wait = np.max(wait_times) if wait_times else 0
+    return {
+        "mode": mode,
+        "avg_wait": avg_wait,
+        "max_wait": max_wait,
+        "served": total_cars_departed,
+        "leftover": sum(intersection.queues.values())
+    }
 
 if __name__ == "__main__":
-    run_simulation()
+    print("=== PERBANDINGAN PERFORMA  ===")
+    
+    # 1. Jalankan Skenario A: FIXED TIMER (misal 30 detik)
+    stats_fixed = run_simulation(mode="FIXED", fixed_duration=30)
+    
+    # 2. Jalankan Skenario B: FUZZY LOGIC
+    stats_fuzzy = run_simulation(mode="FUZZY")
+    
+    # 3. Print Hasil Head-to-Head
+    print("\n" + "="*40)
+    print(f"{'METRIC':<20} | {'FIXED (30s)':<12} | {'FUZZY (Adaptive)':<12}")
+    print("-" * 50)
+    print(f"{'Avg Wait Time':<20} | {stats_fixed['avg_wait']:<12.2f} | {stats_fuzzy['avg_wait']:<12.2f}")
+    print(f"{'Max Wait Time':<20} | {stats_fixed['max_wait']:<12} | {stats_fuzzy['max_wait']:<12}")
+    print(f"{'Cars Served':<20} | {stats_fixed['served']:<12} | {stats_fuzzy['served']:<12}")
+    print(f"{'Queue Leftover':<20} | {stats_fixed['leftover']:<12} | {stats_fuzzy['leftover']:<12}")
+    print("="*40)
+    
+    # Analisis Singkat
+    diff = stats_fixed['avg_wait'] - stats_fuzzy['avg_wait']
+    if diff > 0:
+        print(f"\n✅ KESIMPULAN: Fuzzy Logic lebih cepat {diff:.2f} detik per mobil!")
+    else:
+        print(f"\n⚠️ KESIMPULAN: Fuzzy Logic belum optimal (atau traffic terlalu rendah).")

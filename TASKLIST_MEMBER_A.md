@@ -33,17 +33,17 @@
 
 * [x] **Integration (1h):** Import get\_green\_duration from Member B's code. Call it inside the loop when the light changes.  
 * [x] **Code (1h):** Save the simulation history (Time, Queue Length, Signal State) to a JSON/CSV file. (Member C needs this\!).  
-* [ ] **Git Commit:** feat: integrate fuzzy logic and export simulation data to json
+* [x] **Git Commit:** feat: integrate fuzzy logic and export simulation data to json
 
 ## **📅 Day 4: Dec 31 (Wednesday)**
 
 **Goal:** Run Experiments (Comparison).
 
-* [ ] **Code (2h):** Run the simulation twice:  
+* [x] **Code (2h):** Run the simulation twice:  
   1. Scenario A: Fixed Timer (30s Green, 30s Red).  
   2. Scenario B: Fuzzy Logic Adaptive Timer.  
-* [ ] **Analysis:** Calculate "Total Waiting Time" for both.  
-* [ ] **Git Commit:** feat: add comparison mode (fixed vs fuzzy)
+* [x] **Analysis:** Calculate "Total Waiting Time" for both.  
+* [x] **Git Commit:** feat: add comparison mode (fixed vs fuzzy)
 
 ## **📅 Day 5: Jan 1 (Thursday)**
 

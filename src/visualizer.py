@@ -178,7 +178,8 @@ class DataDrivenScene(Scene):
         
         # Get JSON path from environment variable or use default
         # json_path = os.environ.get("JSON_PATH", "../docs/simulation_data_schema.json")
-        json_path = os.environ.get("JSON_PATH", "../docs/simulation_data.json")
+        # json_path = os.environ.get("JSON_PATH", "../docs/simulation_data_fixed.json")
+        json_path = os.environ.get("JSON_PATH", "../docs/simulation_data_fuzzy.json")
         
         # Load simulation data
         with open(json_path, "r") as f:

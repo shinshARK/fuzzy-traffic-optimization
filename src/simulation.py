@@ -4,6 +4,7 @@ import numpy as np
 from collections import deque
 from src.traffic_gen import generate_arrivals
 from src.intersection import Intersection
+from src.fuzzy_module import get_green_duration
 
 # --- KONFIGURASI SIMULASI ---
 SIMULATION_DURATION = 100  # Lebih pendek untuk tes JSON
@@ -135,15 +136,38 @@ def run_simulation():
                     })
                     # -------------------------
 
-        # --- 4. PHASE SWITCHING (4-PHASE CYCLE) ---
+        # --- 4. PHASE SWITCHING  ---
+        # Tanpa Fuzzy -----------------------------------
+        #  if intersection.green_timer <= 0:
+        #     current_phase_idx = (current_phase_idx + 1) % 4
+        #     next_phase = PHASE_ORDER[current_phase_idx]
+            
+        #     # --- FUZZY LOGIC HOOK (Nanti di sini) ---
+        #     duration = 15 # Fixed for now
+            
+        #     intersection.set_green_light(duration, next_phase)
+        # Tanpa Fuzzy -----------------------------------
+            
+        
+        # Dengan Fuzzy -----------------------------------
         if intersection.green_timer <= 0:
             current_phase_idx = (current_phase_idx + 1) % 4
             next_phase = PHASE_ORDER[current_phase_idx]
             
-            # --- FUZZY LOGIC HOOK (Nanti di sini) ---
-            duration = 15 # Fixed for now
+            # 1. Ambil Data Real-time
+            queue_next = intersection.queues[next_phase]
+            
+            # 2. Panggil 'Fuzzy Logic' (Sekarang butuh parameter ARRIVAL_RATE)
+            # Kita pakai ARRIVAL_RATE global yang ada di atas file simulation.py
+            duration = get_green_duration(queue_next, ARRIVAL_RATE)
+            
+            # Minimum durasi agar tidak terlalu cepat ganti (misal min 5 detik)
+            duration = max(5, duration)
             
             intersection.set_green_light(duration, next_phase)
+            
+            print(f"[T={t:3d}] Switch to {next_phase} | Q: {queue_next:2d} | Arr: {ARRIVAL_RATE} -> Fuzzy Time: {duration}s")
+        # Dengan Fuzzy -----------------------------------
             
         # Simpan Frame
         frames.append(frame)
@@ -162,7 +186,7 @@ def run_simulation():
         "frames": frames
     }
     
-    with open("docs/simulation_data_schema.json", "w") as f:
+    with open("docs/simulation_data.json", "w") as f:
         json.dump(output_data, f, indent=2)
         
     print("\n✅ Data exported to simulation_data.json")

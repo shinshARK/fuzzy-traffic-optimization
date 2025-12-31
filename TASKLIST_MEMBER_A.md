@@ -31,8 +31,8 @@
 
 **Goal:** Connect with Member B (Fuzzy) & Export Data.
 
-* [ ] **Integration (1h):** Import get\_green\_duration from Member B's code. Call it inside the loop when the light changes.  
-* [ ] **Code (1h):** Save the simulation history (Time, Queue Length, Signal State) to a JSON/CSV file. (Member C needs this\!).  
+* [x] **Integration (1h):** Import get\_green\_duration from Member B's code. Call it inside the loop when the light changes.  
+* [x] **Code (1h):** Save the simulation history (Time, Queue Length, Signal State) to a JSON/CSV file. (Member C needs this\!).  
 * [ ] **Git Commit:** feat: integrate fuzzy logic and export simulation data to json
 
 ## **📅 Day 4: Dec 31 (Wednesday)**

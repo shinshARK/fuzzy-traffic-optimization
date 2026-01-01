@@ -49,6 +49,6 @@
 
 **Goal:** Visualization Graphs.
 
-* [ ] **Code (1h):** Use matplotlib to plot "Queue Length vs Time" (Blue line \= Fixed, Red line \= Fuzzy).  
-* [ ] **Deliverable:** Save the plot as results\_graph.png for the Paper.  
-* [ ] **Git Commit:** docs: generate comparative performance graphs
+* [x] **Code (1h):** Use matplotlib to plot "Queue Length vs Time" (Blue line \= Fixed, Red line \= Fuzzy).  
+* [x] **Deliverable:** Save the plot as results\_graph.png for the Paper.  
+* [x] **Git Commit:** docs: generate comparative performance graphs
